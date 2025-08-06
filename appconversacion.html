@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Contador por Nombre</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+    }
+    .nombre-item {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+    }
+    .nombre-item button {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Agregar Nombres</h2>
+  <input type="text" id="nombreInput" placeholder="Ingrese nombre" />
+  <button onclick="agregarNombre()">Agregar</button>
+  <button onclick="borrarTodo()" style="background-color: red; color: white;">🗑 Borrar Todo</button>
+  <button onclick="pausarContador()" style="background-color: orange; color: black;">⏸ Pausar</button>
+
+  <h2>Lista de Nombres</h2>
+  <div id="listaNombres"></div>
+
+  <script>
+    let contadores = JSON.parse(localStorage.getItem("contadores")) || {};
+    let nombreActivo = null;
+    let intervalo = null;
+    const elementosDisplay = {}; // Para actualizar fácilmente el display
+
+    function guardarEnStorage() {
+      localStorage.setItem("contadores", JSON.stringify(contadores));
+    }
+
+    function agregarNombre(nombreManual = null) {
+      const input = document.getElementById("nombreInput");
+      const nombre = nombreManual || input.value.trim();
+      if (nombre === "" || contadores[nombre]) return;
+
+      contadores[nombre] = 0;
+      guardarEnStorage();
+      renderNombre(nombre);
+      input.value = "";
+    }
+
+    function renderNombre(nombre) {
+      const contenedor = document.createElement("div");
+      contenedor.className = "nombre-item";
+
+      const boton = document.createElement("button");
+      boton.textContent = nombre;
+
+      const tiempoSpan = document.createElement("span");
+      tiempoSpan.textContent = `${contadores[nombre]} segundos`;
+
+      elementosDisplay[nombre] = tiempoSpan;
+
+      boton.onclick = () => activarContador(nombre);
+
+      contenedor.appendChild(boton);
+      contenedor.appendChild(tiempoSpan);
+      document.getElementById("listaNombres").appendChild(contenedor);
+    }
+
+    function activarContador(nombre) {
+      if (nombreActivo === nombre) return;
+
+      if (intervalo) clearInterval(intervalo);
+      nombreActivo = nombre;
+
+      intervalo = setInterval(() => {
+        contadores[nombre]++;
+        elementosDisplay[nombre].textContent = contadores[nombre] + " segundos";
+        guardarEnStorage();
+      }, 1000);
+    }
+
+    function pausarContador() {
+      if (intervalo) {
+        clearInterval(intervalo);
+        intervalo = null;
+        nombreActivo = null;
+      }
+    }
+
+    function borrarTodo() {
+      if (intervalo) clearInterval(intervalo);
+      localStorage.removeItem("contadores");
+      contadores = {};
+      nombreActivo = null;
+      document.getElementById("listaNombres").innerHTML = "";
+    }
+
+    // Al cargar la página
+    window.onload = () => {
+      for (let nombre in contadores) {
+        renderNombre(nombre);
+      }
+    };
+  </script>
+</body>
+</html>
